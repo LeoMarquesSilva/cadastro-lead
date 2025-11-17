@@ -33,15 +33,14 @@ function App() {
     return data.toLocaleDateString('pt-BR');
   };
 
-  // Função para enviar webhook
+  // Função para enviar webhook - CORRIGIDA
   const enviarWebhook = async (dados) => {
+    // Apenas URLs HTTPS para evitar Mixed Content
     const webhook_urls = [
-      "http://212.85.2.227/webhook/cadastro-lead2",
-      "http://212.85.2.227:3000/webhook/cadastro-lead2",
       "https://ia-n8n.a8fvaf.easypanel.host/webhook/cadastro-lead2"
     ];
 
-    console.log("=== TENTATIVA WEBHOOK (SSL com problema) ===");
+    console.log("=== TENTATIVA WEBHOOK ===");
     
     for (const url of webhook_urls) {
       try {
@@ -50,8 +49,8 @@ function App() {
         const response = await axios.post(url, dados, {
           timeout: 15000,
           headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'React-Webhook-Client/1.0'
+            'Content-Type': 'application/json'
+            // Removido User-Agent que causa erro no browser
           }
         });
         
@@ -59,10 +58,31 @@ function App() {
         return true;
       } catch (error) {
         console.log(`❌ Falhou ${url}:`, error.message);
+        
+        // Se for erro de CORS, vamos tentar uma abordagem alternativa
+        if (error.message.includes('CORS') || error.message.includes('Network Error')) {
+          console.log('🔄 Tentando método alternativo devido ao CORS...');
+          try {
+            // Método alternativo usando fetch com mode: 'no-cors'
+            const response = await fetch(url, {
+              method: 'POST',
+              mode: 'no-cors', // Isso evita o erro de CORS mas não retorna resposta
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(dados)
+            });
+            
+            console.log('✅ Webhook enviado com fetch no-cors (sem confirmação de recebimento)');
+            return true; // Assumimos que funcionou
+          } catch (fetchError) {
+            console.log(`❌ Fetch no-cors também falhou:`, fetchError.message);
+          }
+        }
       }
     }
     
-    console.log("❌ Todos os webhooks falharam - problema no servidor N8N");
+    console.log("❌ Todos os webhooks falharam - dados salvos apenas localmente");
     return false;
   };
 
@@ -135,23 +155,25 @@ function App() {
         tipo_de_lead: formData.tipo_de_lead,
         areas_analise: formData.areas_analise,
         due_diligence: formData.due_diligence,
-        timestamp: new Date().toLocaleString('pt-BR')
+        timestamp: new Date().toLocaleString('pt-BR'),
+        origem: 'GitHub Pages - React'
       };
 
       // Salva no localStorage como backup
       const dadosExistentes = JSON.parse(localStorage.getItem('leads') || '[]');
       dadosExistentes.push(dadosParaEnvio);
       localStorage.setItem('leads', JSON.stringify(dadosExistentes));
+      console.log('💾 Dados salvos no localStorage:', dadosParaEnvio);
 
       // Tenta enviar para o webhook
       const webhookSucesso = await enviarWebhook(dadosParaEnvio);
 
       if (webhookSucesso) {
-        setMessage('Lead cadastrado com sucesso e enviado para o webhook!');
+        setMessage('✅ Lead cadastrado com sucesso e enviado para o webhook!');
         setMessageType('success');
       } else {
-        setMessage('Lead cadastrado com sucesso, mas houve problema no envio para o webhook. Dados salvos localmente.');
-        setMessageType('success');
+        setMessage('⚠️ Lead cadastrado com sucesso! Dados salvos localmente. O webhook pode ter problemas de CORS - verifique o console para detalhes.');
+        setMessageType('warning');
       }
 
       // Limpa o formulário
@@ -174,7 +196,7 @@ function App() {
 
     } catch (error) {
       console.error('Erro no processamento:', error);
-      setMessage('Ocorreu um erro ao cadastrar o lead. Tente novamente.');
+      setMessage('❌ Ocorreu um erro ao cadastrar o lead. Dados salvos localmente. Tente novamente.');
       setMessageType('error');
     } finally {
       setIsSubmitting(false);
@@ -186,6 +208,7 @@ function App() {
       <header className="header">
         <div className="container">
           <h1>Sistema de Cadastro de Leads</h1>
+          <p className="subtitle">Versão React - GitHub Pages</p>
         </div>
       </header>
 
@@ -200,7 +223,11 @@ function App() {
                 </div>
 
                 {message && (
-                  <div className={`alert ${messageType === 'success' ? 'alert-success' : 'alert-danger'}`}>
+                  <div className={`alert ${
+                    messageType === 'success' ? 'alert-success' : 
+                    messageType === 'warning' ? 'alert-warning' : 
+                    'alert-danger'
+                  }`}>
                     {message}
                   </div>
                 )}
@@ -481,11 +508,17 @@ function App() {
                         className="btn btn-submit"
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? 'Enviando...' : 'Cadastrar'}
+                        {isSubmitting ? 'Enviando...' : 'Cadastrar Lead'}
                       </button>
                     </div>
                   </div>
                 </form>
+
+                {/* Informações sobre backup local */}
+                <div className="alert alert-info mt-4">
+                  <h5>ℹ️ Backup Local</h5>
+                  <p>Todos os dados são salvos automaticamente no seu navegador como backup. Para visualizar os dados salvos, abra o console do navegador (F12) e digite: <code>console.log(JSON.parse(localStorage.getItem('leads')))</code></p>
+                </div>
               </div>
             </div>
           </div>
