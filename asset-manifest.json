@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/cadastro-lead/static/css/main.0e8dcf7e.css",
-    "main.js": "/cadastro-lead/static/js/main.f49e0687.js",
+    "main.css": "/cadastro-lead/static/css/main.7634dd52.css",
+    "main.js": "/cadastro-lead/static/js/main.399d4ea5.js",
     "index.html": "/cadastro-lead/index.html",
-    "main.0e8dcf7e.css.map": "/cadastro-lead/static/css/main.0e8dcf7e.css.map",
-    "main.f49e0687.js.map": "/cadastro-lead/static/js/main.f49e0687.js.map"
+    "main.7634dd52.css.map": "/cadastro-lead/static/css/main.7634dd52.css.map",
+    "main.399d4ea5.js.map": "/cadastro-lead/static/js/main.399d4ea5.js.map"
   },
   "entrypoints": [
-    "static/css/main.0e8dcf7e.css",
-    "static/js/main.f49e0687.js"
+    "static/css/main.7634dd52.css",
+    "static/js/main.399d4ea5.js"
   ]
 }
